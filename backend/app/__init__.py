@@ -1,0 +1,1 @@
+"""QR backend application package."""
