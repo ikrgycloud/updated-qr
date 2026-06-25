@@ -52,6 +52,7 @@ class ProductDetail(Base):
         index=True,
     )
     name: Mapped[str] = mapped_column(String(120))
+    product_description: Mapped[str | None] = mapped_column(Text, nullable=True)
     crop_name: Mapped[str | None] = mapped_column(Text, nullable=True)
     dosage: Mapped[str | None] = mapped_column(Text, nullable=True)
     gazette_notification: Mapped[str | None] = mapped_column(Text, nullable=True)

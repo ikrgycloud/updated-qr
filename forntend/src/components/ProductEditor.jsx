@@ -20,6 +20,7 @@ function createEmptyForm() {
     product_name: "",
     details: {
       name: "",
+      product_description: "",
       crop_name: "",
       dosage: "",
       gazette_notification: "",
@@ -42,6 +43,7 @@ function buildFormState(product) {
     product_name: product.product_name || "",
     details: {
       name: product.details?.name || product.product_name || "",
+      product_description: product.details?.product_description || "",
       crop_name: product.details?.crop_name || "",
       dosage: product.details?.dosage || "",
       gazette_notification: product.details?.gazette_notification || "",
@@ -182,6 +184,14 @@ export default function ProductEditor({
               />
             </label>
             <label className="editor-field">
+              <span className="document-label">Product Description</span>
+              <textarea
+                rows="3"
+                value={formState.details.product_description}
+                onChange={(event) => updateDetailField("product_description", event.target.value)}
+              />
+            </label>
+            <label className="editor-field">
               <span className="document-label">Crop Name</span>
               <input
                 type="text"
@@ -259,7 +269,7 @@ export default function ProductEditor({
           <section className="document-block">
             <div className="editor-section-head">
               <div>
-                <span className="document-label">Ingredients</span>
+                <span className="document-label">Composition</span>
                 <p className="editor-section-copy">Add ingredient and content rows for this product template.</p>
               </div>
               <button type="button" className="secondary-button" onClick={addIngredient}>

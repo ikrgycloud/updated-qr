@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import QRCode from "qrcode";
+import logoImage from "../sribio.jpeg";
 
 function TrashIcon() {
   return (
@@ -105,7 +106,7 @@ export default function ProductWorkspace({
     printWindow.document.write(`
       <html>
         <head>
-          <title>${product.product_name} Product QR Code</title>
+          <title>${product.product_name} </title>
           <style>
             body {
               font-family: Arial, sans-serif;
@@ -136,7 +137,7 @@ export default function ProductWorkspace({
           </style>
         </head>
         <body>
-          <h1>${product.product_name} Product QR Code</h1>
+          <h1>${product.product_name} </h1>
           <img src="${qrImage}" alt="QR code" />
           <p><strong>QR Link:</strong> ${generatedQrUrl}</p>
           <div class="footer">Designed and maintained by ${companyName}</div>
@@ -181,7 +182,8 @@ export default function ProductWorkspace({
 
       <article className="document-sheet">
         <header className="document-header">
-          <h2>{product.product_name} Product QR Code</h2>
+          <h2>{product.product_name} </h2>
+          <img className="document-logo" src={logoImage} alt="Sri BioAesthetics Pvt. Ltd. logo" />
         </header>
 
         <section className="document-block document-common-grid">
@@ -195,12 +197,25 @@ export default function ProductWorkspace({
           </div>
         </section>
 
+        <section className="document-block detail-grid document-name-description">
+          <div className="document-field">
+            <span className="document-label">Name</span>
+            <p className="document-value">{product.details?.name || ""}</p>
+          </div>
+          <div className="document-field">
+            <span className="document-label">Product Description</span>
+            <p className="document-value">{product.details?.product_description || ""}</p>
+          </div>
+        </section>
+
         <section className="document-block">
+          <span className="document-label">Composition</span>
           <div className="table-wrap">
             <table className="document-table">
               <thead>
                 <tr>
-                  <th>Ingredient</th>
+                  <th className="serial-column">S.No</th>
+                  <th>Composition</th>
                   <th>Content</th>
                 </tr>
               </thead>
@@ -208,13 +223,15 @@ export default function ProductWorkspace({
                 {product.ingredients.length > 0 ? (
                   product.ingredients.map((item, index) => (
                     <tr key={`${item.ingredient_name}-${index}`}>
-                      <td data-label="Ingredient">{item.ingredient_name}</td>
+                      <td className="serial-column" data-label="S.No">{index + 1}</td>
+                      <td data-label="Composition">{item.ingredient_name}</td>
                       <td data-label="Content">{item.content}</td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td data-label="Ingredient"></td>
+                    <td className="serial-column" data-label="S.No"></td>
+                    <td data-label="Composition"></td>
                     <td data-label="Content"></td>
                   </tr>
                 )}
@@ -224,10 +241,6 @@ export default function ProductWorkspace({
         </section>
 
         <section className="document-block detail-grid document-product-meta">
-          <div className="document-field">
-            <span className="document-label">Name</span>
-            <p className="document-value">{product.details?.name || ""}</p>
-          </div>
           <div className="document-field">
             <span className="document-label">Crop Name</span>
             <p className="document-value">{product.details?.crop_name || ""}</p>

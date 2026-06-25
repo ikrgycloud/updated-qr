@@ -11,6 +11,7 @@ class ProductListItem(BaseModel):
 
 class ProductDetailPayload(BaseModel):
     name: str
+    product_description: str
     crop_name: str
     dosage: str
     gazette_notification: str
@@ -35,6 +36,7 @@ class ProductIngredientInput(BaseModel):
 
 class ProductDetailInput(BaseModel):
     name: str = ""
+    product_description: str = ""
     crop_name: str = ""
     dosage: str = ""
     gazette_notification: str = ""

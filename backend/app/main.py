@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 
 from app.core.config import get_settings
 from app.core.database import init_db
-from app.routers import products_router, qr_router
+from app.routers import health_router, products_router, qr_router
 
 settings = get_settings()
 
@@ -32,6 +32,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(health_router)
+app.include_router(health_router, prefix=settings.api_prefix)
 app.include_router(products_router, prefix=settings.api_prefix)
 app.include_router(qr_router, prefix=settings.api_prefix)
 

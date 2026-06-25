@@ -90,20 +90,21 @@ input {
 }
 
 .brand-mark {
-  width: 72px;
-  height: 72px;
-  border-radius: 20px;
+  width: 150px;
+  height: 58px;
+  border-radius: 16px;
   display: grid;
   place-items: center;
-  background: rgba(255, 255, 255, 0.78);
+  background: #000000;
   box-shadow: 0 16px 30px rgba(22, 92, 75, 0.16);
   overflow: hidden;
+  padding: 6px;
 }
 
 .brand-mark img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
 }
 
 .brand-kicker,
@@ -537,15 +538,33 @@ input {
 }
 
 .document-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 18px;
   padding-bottom: 20px;
   border-bottom: 1px solid var(--line);
 }
 
 .document-header h2 {
   margin: 0;
+  min-width: 0;
   font-family: "Space Grotesk", sans-serif;
   font-size: clamp(1.8rem, 3vw, 3rem);
   letter-spacing: -0.04em;
+}
+
+.document-logo {
+  width: 220px;
+  height: 74px;
+  flex: 0 0 auto;
+  border-radius: 16px;
+  object-fit: contain;
+  background: #000000;
+  padding: 8px;
+  margin-left: auto;
+  box-shadow: 0 14px 28px rgba(22, 92, 75, 0.14);
 }
 
 .document-block {
@@ -561,13 +580,20 @@ input {
 .document-common-grid,
 .detail-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: 1fr;
   gap: 16px;
 }
 
 .document-table th,
 .document-table td {
   padding: 16px 14px;
+}
+
+.document-table .serial-column {
+  width: 86px;
+  color: var(--brand);
+  font-weight: 800;
+  text-align: center;
 }
 
 .document-field {
@@ -594,11 +620,12 @@ input {
 }
 
 .document-licenses {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: 1fr;
 }
 
+.document-name-description,
 .document-product-meta {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: 1fr;
 }
 
 .manufacturer-block p:last-child {
@@ -939,9 +966,10 @@ td {
   }
 
   .brand-mark {
-    width: 58px;
-    height: 58px;
-    border-radius: 16px;
+    width: 124px;
+    height: 48px;
+    border-radius: 14px;
+    padding: 5px;
   }
 
   .brand-name {
@@ -1051,8 +1079,20 @@ td {
     padding: 18px;
   }
 
+  .document-header {
+    align-items: flex-start;
+    gap: 12px;
+  }
+
   .document-header h2 {
     font-size: clamp(1.5rem, 8vw, 2rem);
+  }
+
+  .document-logo {
+    width: 144px;
+    height: 52px;
+    border-radius: 14px;
+    padding: 6px;
   }
 
   .document-block {

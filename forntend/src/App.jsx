@@ -16,7 +16,7 @@ import DeletedProductsPanel from "./components/DeletedProductsPanel";
 import ProductEditor from "./components/ProductEditor";
 import ProductPicker from "./components/ProductPicker";
 import ProductWorkspace from "./components/ProductWorkspace";
-import logoUrl from "./image.png";
+import logoUrl from "./sribio.jpeg";
 
 const COMPANY_NAME = import.meta.env.VITE_COMPANY_NAME || "";
 const PROJECT_NAME = "Sri BioAesthetics Pvt. Ltd.";

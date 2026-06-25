@@ -112,6 +112,7 @@ def get_deleted_product(db: Session, product_id: int) -> Product:
 def _build_detail_payload(detail: ProductDetail | None) -> ProductDetailPayload:
     return ProductDetailPayload(
         name=_string_value(detail.name if detail else None),
+        product_description=_string_value(detail.product_description if detail else None),
         crop_name=_string_value(detail.crop_name if detail else None),
         dosage=_string_value(detail.dosage if detail else None),
         gazette_notification=_string_value(detail.gazette_notification if detail else None),
@@ -168,6 +169,7 @@ def build_product_response(product: Product) -> ProductDetailResponse:
 
 def _apply_detail_payload(detail: ProductDetail, payload: ProductDetailInput) -> None:
     detail.name = payload.name.strip()
+    detail.product_description = _nullable_text(payload.product_description)
     detail.crop_name = _nullable_text(payload.crop_name)
     detail.dosage = _nullable_text(payload.dosage)
     detail.gazette_notification = _nullable_text(payload.gazette_notification)
