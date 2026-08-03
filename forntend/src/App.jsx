@@ -1,16 +1,23 @@
 import { useEffect, useState } from "react";
-import { Routes, Route, useLocation, useNavigate, useParams } from "react-router-dom";
+import { Navigate, Routes, Route, useLocation, useNavigate, useParams } from "react-router-dom";
 import {
   createProduct,
+  clearStoredAuthToken,
   deleteProduct,
+  fetchCurrentUser,
   fetchDeletedProduct,
   fetchDeletedProducts,
   fetchProduct,
   fetchProducts,
+  getStoredAuthToken,
+  loginUser,
   permanentlyDeleteProduct,
+  registerUser,
   restoreProduct,
+  setStoredAuthToken,
   storeQr,
   updateProduct,
+  verifyReferral,
 } from "./api";
 import DeletedProductsPanel from "./components/DeletedProductsPanel";
 import ProductEditor from "./components/ProductEditor";
@@ -21,7 +28,7 @@ import logoUrl from "./sribio.jpeg";
 const COMPANY_NAME = import.meta.env.VITE_COMPANY_NAME || "";
 const PROJECT_NAME = "Sri BioAesthetics Pvt. Ltd.";
 
-function AppLayout({ children }) {
+function AppLayout({ children, user, onLogout }) {
   useEffect(() => {
     document.title = PROJECT_NAME;
 
@@ -50,6 +57,14 @@ function AppLayout({ children }) {
             <span className="brand-name">{PROJECT_NAME}</span>
           </div>
         </div>
+        {user ? (
+          <div className="header-actions">
+            <span className="user-chip">{user.first_name} {user.last_name}</span>
+            <button type="button" className="secondary-button logout-button" onClick={onLogout}>
+              Logout
+            </button>
+          </div>
+        ) : null}
       </header>
 
       {children}
@@ -61,7 +76,227 @@ function AppLayout({ children }) {
   );
 }
 
-function CatalogPage() {
+function ProtectedRoute({ authReady, user, children }) {
+  if (!authReady) {
+    return (
+      <AppLayout>
+        <div className="overlay-loader">
+          <div className="loader-card">
+            <div className="loader-orbit" />
+            <p>Checking session...</p>
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return children;
+}
+
+function AuthPage({ mode, onAuthenticated }) {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const isRegisterMode = mode === "register";
+  const [referralId, setReferralId] = useState("");
+  const [referralAllowed, setReferralAllowed] = useState(!isRegisterMode);
+  const [formState, setFormState] = useState({
+    identifier: "",
+    password: "",
+    first_name: "",
+    last_name: "",
+    employee_id: "",
+    email: "",
+    phone_number: "",
+    joining_date: "",
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const successMessage = !isRegisterMode ? location.state?.message || "" : "";
+
+  useEffect(() => {
+    if (mode === "login") {
+      clearStoredAuthToken();
+      onAuthenticated(null);
+    }
+
+    setReferralId("");
+    setReferralAllowed(mode !== "register");
+    setError("");
+    setLoading(false);
+    setFormState({
+      identifier: "",
+      password: "",
+      first_name: "",
+      last_name: "",
+      employee_id: "",
+      email: "",
+      phone_number: "",
+      joining_date: "",
+    });
+  }, [mode, onAuthenticated]);
+
+  function updateField(field, value) {
+    setFormState((current) => ({
+      ...current,
+      [field]: value,
+    }));
+  }
+
+  async function handleReferralSubmit(event) {
+    event.preventDefault();
+    setLoading(true);
+    setError("");
+
+    try {
+      const result = await verifyReferral(referralId);
+      if (!result.allowed) {
+        setError("Invalid referral ID.");
+        return;
+      }
+      setReferralAllowed(true);
+    } catch (referralError) {
+      setError(referralError instanceof Error ? referralError.message : "Unable to verify referral ID.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleAuthSubmit(event) {
+    event.preventDefault();
+    if (isRegisterMode && !referralAllowed) {
+      setError("Please verify the referral ID before registration.");
+      return;
+    }
+
+    setLoading(true);
+    setError("");
+
+    try {
+      if (isRegisterMode) {
+        await registerUser({
+          referral_id: referralId,
+          first_name: formState.first_name,
+          last_name: formState.last_name,
+          employee_id: formState.employee_id,
+          password: formState.password,
+          email: formState.email,
+          phone_number: formState.phone_number,
+          joining_date: formState.joining_date,
+        });
+        clearStoredAuthToken();
+        onAuthenticated(null);
+        navigate("/login", {
+          replace: true,
+          state: { message: "Registration successful. Please login with your credentials." },
+        });
+        return;
+      }
+
+      const response = await loginUser(formState.identifier, formState.password);
+      setStoredAuthToken(response.access_token);
+      onAuthenticated(response.user);
+      navigate("/", { replace: true });
+    } catch (authError) {
+      setError(authError instanceof Error ? authError.message : "Authentication failed.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <AppLayout>
+      <section className="auth-shell">
+        <div className="auth-panel">
+          <p className="brand-kicker">Secure Access</p>
+          <h1>{isRegisterMode ? "Register User" : "Login"}</h1>
+          <p className="auth-copy">
+            {isRegisterMode ? "Enter the referral ID to unlock employee registration." : "Use employee ID, phone number, or email to continue."}
+          </p>
+
+          {error ? <div className="stack-state auth-error">{error}</div> : null}
+          {successMessage ? <div className="stack-state auth-success">{successMessage}</div> : null}
+
+          {isRegisterMode && !referralAllowed ? (
+            <form className="auth-form" onSubmit={handleReferralSubmit}>
+              <label className="editor-field">
+                <span className="document-label">Referral ID</span>
+                <input
+                  type="password"
+                  value={referralId}
+                  onChange={(event) => setReferralId(event.target.value)}
+                  required
+                />
+              </label>
+              <button type="submit" className="primary-button" disabled={loading}>
+                {loading ? "Verifying..." : "Continue To Register"}
+              </button>
+            </form>
+          ) : (
+            <form className="auth-form" onSubmit={handleAuthSubmit}>
+              {isRegisterMode ? (
+                <>
+                  <div className="auth-grid">
+                    <label className="editor-field">
+                      <span className="document-label">First Name</span>
+                      <input type="text" value={formState.first_name} onChange={(event) => updateField("first_name", event.target.value)} required />
+                    </label>
+                    <label className="editor-field">
+                      <span className="document-label">Last Name</span>
+                      <input type="text" value={formState.last_name} onChange={(event) => updateField("last_name", event.target.value)} required />
+                    </label>
+                  </div>
+                  <label className="editor-field">
+                    <span className="document-label">Employee ID</span>
+                    <input type="text" value={formState.employee_id} onChange={(event) => updateField("employee_id", event.target.value)} required />
+                  </label>
+                  <label className="editor-field">
+                    <span className="document-label">Email</span>
+                    <input type="email" value={formState.email} onChange={(event) => updateField("email", event.target.value)} required />
+                  </label>
+                  <label className="editor-field">
+                    <span className="document-label">Phone Number</span>
+                    <input type="tel" value={formState.phone_number} onChange={(event) => updateField("phone_number", event.target.value)} required />
+                  </label>
+                  <label className="editor-field">
+                    <span className="document-label">Joining Date</span>
+                    <input type="date" value={formState.joining_date} onChange={(event) => updateField("joining_date", event.target.value)} required />
+                  </label>
+                </>
+              ) : (
+                <label className="editor-field">
+                  <span className="document-label">Employee ID / Phone / Email</span>
+                  <input type="text" value={formState.identifier} onChange={(event) => updateField("identifier", event.target.value)} required />
+                </label>
+              )}
+
+              <label className="editor-field">
+                <span className="document-label">Password</span>
+                <input type="password" value={formState.password} onChange={(event) => updateField("password", event.target.value)} minLength={isRegisterMode ? 8 : 1} required />
+              </label>
+              <button type="submit" className="primary-button" disabled={loading}>
+                {loading ? "Please wait..." : isRegisterMode ? "Create Account" : "Login"}
+              </button>
+            </form>
+          )}
+
+          <button
+            type="button"
+            className="ghost-button auth-switch"
+            onClick={() => navigate(isRegisterMode ? "/login" : "/register")}
+          >
+            {isRegisterMode ? "Already registered? Login" : "Register New User"}
+          </button>
+        </div>
+      </section>
+    </AppLayout>
+  );
+}
+
+function CatalogPage({ user, onLogout }) {
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
@@ -112,7 +347,7 @@ function CatalogPage() {
   }
 
   return (
-    <AppLayout>
+    <AppLayout user={user} onLogout={onLogout}>
       <ProductPicker
         products={filteredProducts}
         searchTerm={searchTerm}
@@ -133,7 +368,7 @@ function CatalogPage() {
   );
 }
 
-function DeletedProductsPage() {
+function DeletedProductsPage({ user, onLogout }) {
   const navigate = useNavigate();
   const [products, setProducts] = useState([]);
   const [filteredProducts, setFilteredProducts] = useState([]);
@@ -193,7 +428,7 @@ function DeletedProductsPage() {
   }
 
   return (
-    <AppLayout>
+    <AppLayout user={user} onLogout={onLogout}>
       <DeletedProductsPanel
         products={filteredProducts}
         searchTerm={searchTerm}
@@ -209,7 +444,7 @@ function DeletedProductsPage() {
   );
 }
 
-function ProductPage() {
+function ProductPage({ user, onLogout }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { productId } = useParams();
@@ -291,7 +526,7 @@ function ProductPage() {
   }
 
   return (
-    <AppLayout>
+    <AppLayout user={user} onLogout={onLogout}>
       {detailLoading ? (
         <div className="overlay-loader">
           <div className="loader-card">
@@ -320,7 +555,7 @@ function ProductPage() {
   );
 }
 
-function DeletedProductPage() {
+function DeletedProductPage({ user, onLogout }) {
   const navigate = useNavigate();
   const { productId } = useParams();
   const [selectedProduct, setSelectedProduct] = useState(null);
@@ -346,7 +581,7 @@ function DeletedProductPage() {
   }
 
   return (
-    <AppLayout>
+    <AppLayout user={user} onLogout={onLogout}>
       {detailLoading ? (
         <div className="overlay-loader">
           <div className="loader-card">
@@ -375,7 +610,7 @@ function DeletedProductPage() {
   );
 }
 
-function ProductEditorPage({ mode }) {
+function ProductEditorPage({ mode, user, onLogout }) {
   const navigate = useNavigate();
   const location = useLocation();
   const { productId } = useParams();
@@ -456,7 +691,7 @@ function ProductEditorPage({ mode }) {
   }
 
   return (
-    <AppLayout>
+    <AppLayout user={user} onLogout={onLogout}>
       {loading ? (
         <div className="overlay-loader">
           <div className="loader-card">
@@ -482,14 +717,49 @@ function ProductEditorPage({ mode }) {
 }
 
 export default function App() {
+  const navigate = useNavigate();
+  const [authReady, setAuthReady] = useState(false);
+  const [authUser, setAuthUser] = useState(null);
+
+  useEffect(() => {
+    async function restoreSession() {
+      const token = getStoredAuthToken();
+      if (!token) {
+        clearStoredAuthToken();
+        setAuthReady(true);
+        return;
+      }
+
+      try {
+        const currentUser = await fetchCurrentUser();
+        setAuthUser(currentUser);
+      } catch {
+        clearStoredAuthToken();
+        setAuthUser(null);
+      } finally {
+        setAuthReady(true);
+      }
+    }
+
+    void restoreSession();
+  }, []);
+
+  function handleLogout() {
+    clearStoredAuthToken();
+    setAuthUser(null);
+    navigate("/login", { replace: true });
+  }
+
   return (
     <Routes>
-      <Route path="/" element={<CatalogPage />} />
-      <Route path="/deleted-products" element={<DeletedProductsPage />} />
-      <Route path="/deleted-products/:productId" element={<DeletedProductPage />} />
-      <Route path="/product/new" element={<ProductEditorPage mode="create" />} />
-      <Route path="/product/:productId/edit" element={<ProductEditorPage mode="edit" />} />
-      <Route path="/product/:productId" element={<ProductPage />} />
+      <Route path="/login" element={<AuthPage mode="login" onAuthenticated={setAuthUser} />} />
+      <Route path="/register" element={<AuthPage mode="register" onAuthenticated={setAuthUser} />} />
+      <Route path="/" element={<ProtectedRoute authReady={authReady} user={authUser}><CatalogPage user={authUser} onLogout={handleLogout} /></ProtectedRoute>} />
+      <Route path="/deleted-products" element={<ProtectedRoute authReady={authReady} user={authUser}><DeletedProductsPage user={authUser} onLogout={handleLogout} /></ProtectedRoute>} />
+      <Route path="/deleted-products/:productId" element={<ProtectedRoute authReady={authReady} user={authUser}><DeletedProductPage user={authUser} onLogout={handleLogout} /></ProtectedRoute>} />
+      <Route path="/product/new" element={<ProtectedRoute authReady={authReady} user={authUser}><ProductEditorPage mode="create" user={authUser} onLogout={handleLogout} /></ProtectedRoute>} />
+      <Route path="/product/:productId/edit" element={<ProtectedRoute authReady={authReady} user={authUser}><ProductEditorPage mode="edit" user={authUser} onLogout={handleLogout} /></ProtectedRoute>} />
+      <Route path="/product/:productId" element={<ProductPage user={authUser} onLogout={handleLogout} />} />
     </Routes>
   );
 }

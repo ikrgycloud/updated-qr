@@ -29,7 +29,7 @@ def get_db() -> Generator[Session, None, None]:
 
 
 def init_db() -> None:
-    from app.models import generated_qr, product  # noqa: F401
+    from app.models import generated_qr, product, user  # noqa: F401
 
     Base.metadata.create_all(bind=engine)
     _ensure_product_soft_delete_columns()

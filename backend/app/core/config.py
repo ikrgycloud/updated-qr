@@ -9,6 +9,9 @@ class Settings(BaseSettings):
     database_url: str
     api_prefix: str = "/api"
     cors_origins: str = ""
+    referral_id: str
+    auth_secret_key: str
+    access_token_expire_minutes: int = 720
 
     model_config = SettingsConfigDict(
         env_file=".env",
