@@ -26,20 +26,42 @@ backend/
 
 ## Run Locally
 
-1. Create and activate a virtual environment.
-2. Install dependencies:
+### Full Stack Docker Run
+
+From the project root:
+
+```bash
+docker compose up --build
+```
+
+Backend will run at:
+
+```text
+http://localhost:8000
+```
+
+### Backend Only Development
+
+1. Start the Docker database from the project root:
+
+```bash
+docker compose up db
+```
+
+2. Create and activate a virtual environment.
+3. Install dependencies:
 
 ```bash
 pip install -r requirements.txt
 ```
 
-3. Start the server from the `backend` folder:
+4. Start the server from the `backend` folder:
 
 ```bash
 uvicorn app.main:app --reload
 ```
 
-4. Open:
+5. Open:
 
 - Backend root: `<your-backend-url>/`
 - Swagger UI: `<your-backend-url>/docs`
@@ -47,7 +69,7 @@ uvicorn app.main:app --reload
 
 ## Data Source
 
-The backend does not seed or hardcode product data. Insert records into your database first, then call the APIs.
+Docker PostgreSQL is the default database. On the first run, `../docker/postgres/init/001_schema_seed.sql` creates the tables and inserts the initial product data.
 
 Empty product detail values are returned as empty strings in the product detail response.
 
@@ -60,8 +82,11 @@ The standalone React + Vite frontend lives in `../forntend`.
 Configure backend values in `.env`:
 
 ```bash
-DATABASE_URL=
-CORS_ORIGINS=
+DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5432/products
+CORS_ORIGINS=*
+REFERRAL_ID=909090
+AUTH_SECRET_KEY=
+ACCESS_TOKEN_EXPIRE_MINUTES=720
 ```
 
 ## Example Request

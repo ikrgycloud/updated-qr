@@ -4,6 +4,24 @@ Standalone React + Vite frontend for the FastAPI product backend.
 
 ## Run
 
+### Docker Production-Like Run
+
+From the project root:
+
+```bash
+docker compose up --build
+```
+
+Open:
+
+```text
+http://localhost:5173
+```
+
+The Docker frontend is built with Vite, served by Nginx, and proxies `/api` to the backend container.
+
+### Local Vite Development
+
 ```bash
 npm install
 npm run dev
