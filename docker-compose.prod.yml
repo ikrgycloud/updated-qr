@@ -1,0 +1,149 @@
+services:
+
+  # ============================================================
+  # POSTGRES DATABASE
+  # ============================================================
+
+  db:
+
+    image: postgres:16-alpine
+
+    container_name: sribio-postgres
+
+    restart: unless-stopped
+
+    environment:
+
+      POSTGRES_DB: ${POSTGRES_DB:-products}
+
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+
+    volumes:
+
+      - postgres_data:/var/lib/postgresql/data
+
+      - ./postgres-init:/docker-entrypoint-initdb.d:ro
+
+    healthcheck:
+
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-products}"
+        ]
+
+      interval: 10s
+
+      timeout: 5s
+
+      retries: 5
+
+    networks:
+
+      - sribio-network
+
+
+  # ============================================================
+  # BACKEND
+  # ============================================================
+
+  backend:
+
+    image: ${BACKEND_IMAGE}
+
+    container_name: sribio-backend
+
+    restart: unless-stopped
+
+    environment:
+
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-products}
+
+      CORS_ORIGINS: ${CORS_ORIGINS:-*}
+
+      REFERRAL_ID: ${REFERRAL_ID:-909090}
+
+      AUTH_SECRET_KEY: ${AUTH_SECRET_KEY}
+
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-720}
+
+    expose:
+
+      - "8000"
+
+    depends_on:
+
+      db:
+        condition: service_healthy
+
+    healthcheck:
+
+      test:
+        [
+          "CMD",
+          "python",
+          "-c",
+          "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=5)"
+        ]
+
+      interval: 15s
+
+      timeout: 5s
+
+      retries: 5
+
+    networks:
+
+      - sribio-network
+
+
+  # ============================================================
+  # FRONTEND
+  # ============================================================
+
+  frontend:
+
+    image: ${FRONTEND_IMAGE}
+
+    container_name: sribio-frontend
+
+    restart: unless-stopped
+
+    ports:
+
+      - "84:80"
+
+    depends_on:
+
+      backend:
+        condition: service_healthy
+
+    networks:
+
+      - sribio-network
+
+
+# ============================================================
+# POSTGRES PERSISTENT STORAGE
+# ============================================================
+
+volumes:
+
+  postgres_data:
+
+    name: sribio-postgres-data
+
+
+# ============================================================
+# NETWORK
+# ============================================================
+
+networks:
+
+  sribio-network:
+
+    name: sribio-network
+
+    driver: bridge
