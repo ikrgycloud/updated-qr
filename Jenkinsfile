@@ -331,7 +331,7 @@ pipeline {
                                 --fail \
                                 --silent \
                                 --show-error \
-                                http://localhost:84/ \
+                                http://localhost:87/ \
                                 > /dev/null
 
                             echo "Frontend is UP"
@@ -344,7 +344,7 @@ pipeline {
                                 --fail \
                                 --silent \
                                 --show-error \
-                                http://localhost:84/health \
+                                http://localhost:87/health \
                                 > /dev/null
 
                             echo "Backend is UP"
